@@ -1,9 +1,17 @@
-from pathlib import Path
 import os
 import scrapy
 import time
 from seleniumwire import webdriver
 from selenium.webdriver.chrome.options import Options
+
+
+def make_all_dirs(p, filepath=False):
+    if filepath is True:
+        filepath, fullname = os.path.split(p)
+        print(filepath, fullname)
+
+    if not os.path.isdir(p):
+        os.makedirs(p)
 
 
 class GamesSpider(scrapy.Spider):
@@ -17,13 +25,15 @@ class GamesSpider(scrapy.Spider):
     chromedriver = 'chromedriver'
 
     def start_requests(self):
+        # base 最后不能以 / 结尾
         urls = [
-            {"_url": 'https://static.game.fm/data/1/index.html', "base": 'https://static.game.fm/data/1/',
+            {"_url": 'https://static.game.fm/data/521/index.html', "base": 'https://static.game.fm/data/521',
              "game_id": '6666'},
         ]
 
         for url in urls:
-            yield scrapy.Request(url=url["_url"], callback=self.parse, cb_kwargs={"game_id": url["game_id"]})
+            yield scrapy.Request(url=url["_url"], callback=self.parse,
+                                 cb_kwargs={"game_id": url["game_id"], "base": url["base"]})
 
     # 创建抓取参数
     def build_options(self):
@@ -37,40 +47,46 @@ class GamesSpider(scrapy.Spider):
         return options
 
     def parse(self, response, **kwargs):
-        self.download_index_page(response.body, kwargs["game_id"])
+        self.download_index_page(response.text, kwargs["game_id"])
 
-        driver = webdriver.Chrome(options=self.build_options(), seleniumwire_options={})
+        # driver = webdriver.Chrome(options=self.build_options(), seleniumwire_options={})
 
         # Go to the Google home page
-        driver.get(response.url)
+        # driver.get(response.url)
 
         # driver.set_page_load_timeout(30)
         # driver.implicitly_wait(120)
         # 网页加载完成用 js 设置无效
-        time.sleep(15)
+        # time.sleep(15)
 
         # Access requests via the `requests` attribute
-        for request in driver.requests:
-            if request.response:
-                yield scrapy.Request(url=request.url, callback=self.download_source, cb_kwargs=kwargs)
-
-        driver.close()
+        # for request in driver.requests:
+        #     if request.response:
+        #         yield scrapy.Request(url=request.url, callback=self.download_source, cb_kwargs=kwargs)
+        #
+        # driver.close()
 
     def download_source(self, response, **kwargs):
-        print(response.url, kwargs)
-        # p = os.path.join(self.file_save_base_path, kwargs["game_id"], "index.html")
-        # Path(p).write_bytes(response.body)
+        source_url = response.url
+        bs = os.path.join(self.file_save_base_path, kwargs["game_id"])
+        _file = source_url.replace(kwargs['base'], bs)
+
+        with open(_file, mode="a", encoding='utf-8') as f:
+            f.write(response.text)
+
+        file_info = {
+            "save_path": _file,
+            "game_id": kwargs["game_id"],
+        }
+        yield file_info
 
     def download_index_page(self, bs, game_id):
         p = os.path.join(self.file_save_base_path, game_id)
-        if not os.path.exists(p):
-            try:
-                os.makedirs(p)
-            except:
-                print('文件路径创建失败：', p)
-                return
+
+        print(66666666666)
         _file = os.path.join(p, "index.html")
-        with open(_file, mode="wb") as f:
+        make_all_dirs(_file, filepath=True)
+        with open(_file, mode="a", encoding='utf-8') as f:
             f.write(bs)
 
         file_info = {
