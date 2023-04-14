@@ -198,7 +198,7 @@ class PyCrawler:
     # includes 额外要下载相关资源的外站
     # wait_func 页面等待方式
     # wait_time 等待时长
-    def find_urls(self, includes=None, wait_func=None):
+    def find_urls(self, includes=None, wait_func=None, download_all=False):
         if includes is None:
             includes = []
 
@@ -219,7 +219,7 @@ class PyCrawler:
         for request in driver.requests:
             if request.response:
                 u = urllib.parse.urlparse(request.url)
-                if u.hostname in includes:
+                if download_all or u.hostname in includes:
                     rs_urls.append(request.url)
 
         driver.close()
