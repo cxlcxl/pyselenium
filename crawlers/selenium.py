@@ -67,78 +67,6 @@ class PyCrawler:
         options.add_argument(self.blink_features)
         return options
 
-    # 开始抓取
-    def scrapy_pages(self, *game_x_paths, wait_xpath=None, scrapy_type=1):
-        driver = Chrome(self.chromedriver, options=self.build_options())
-        driver.get(self.url)
-
-        # https://www.yuanrenxue.com/python-selenium/selenium-waits.html
-        driver.implicitly_wait(20)  # 隐式等待，最多等 20s，一次设置了后面的都适用
-        # if wait_xpath is not None:
-        #     # 显式等待 20s 页面加载，20s 内完成加载停止等待，超过抛出异常
-        #     try:
-        #         element = WebDriverWait(driver, 20).until(
-        #             ec.presence_of_element_located((By.XPATH, wait_xpath))
-        #         )
-        #         element.click()
-        #     except (Exception,):
-        #         driver.quit()
-
-        # iframe_base_url = self.url
-        if len(game_x_paths) > 0:
-            for xpath in game_x_paths:
-                print(f'准备加载 iframe[{xpath}]')
-                try:
-                    ele = driver.find_element_by_xpath(xpath)
-                except selenium.common.exceptions.NoSuchElementException:
-                    print('xpath 节点查找失败：', xpath)
-                    driver.quit()
-                    return
-
-                # if idx == len(game_x_paths) - 1:
-                # 必需先取到 src 才能切换进入 iframe
-                # iframe_base_url = ele.get_attribute("src")
-                # else:
-                #     driver.switch_to.frame(ele)
-                driver.switch_to.frame(ele)
-
-        # driver.execute_script("""
-        #     alert(123);
-        # """)
-
-        # self.save_file(self.url, driver.page_source, html_ext_fill)
-        # self.scrapy_js(driver)
-        # self.scrapy_css()
-        # print(iframe_base_url)
-
-        # print(driver.page_source)
-        # driver.quit()
-        time.sleep(10)
-
-    def scrapy_js(self, d=None):
-        elements = d.find_elements_by_tag_name('script')
-        if len(elements) == 0:
-            print('没有查询到 JS 标签')
-            return
-
-        for ele in elements:
-            try:
-                js_url = ele.get_attribute('src')
-                if js_url == '':
-                    continue
-
-                source = requests.get(js_url)
-                source.encoding = 'utf-8'
-                self.save_file(js_url, source.text)
-            except selenium.common.exceptions.StaleElementReferenceException:
-                print('JS 源码读取「存储」失败')
-                continue
-
-        return
-
-    def scrapy_css(self, base_url=None):
-        pass
-
     def save_file(self, f_url, page_source=None, ext=None):
         if page_source is None:
             return
@@ -176,24 +104,6 @@ class PyCrawler:
                 game_url = urllib.parse.urljoin(url_prefix, name.replace(' ', ''))
                 game_urls.append(game_url)
         print(game_urls)
-
-    def fly_message(self):
-        driver = Chrome(self.chromedriver, options=self.build_options())
-        driver.get(self.url)
-
-        driver.implicitly_wait(15)
-
-        content = driver.find_element_by_xpath('//*[@id="nb-nodeboard-set-content-js"]')
-        content.send_keys(random.randint(999, 10000000))
-        phone = driver.find_element_by_xpath('//*[@id="nb_nodeboard_set_phone"]')
-        phone.send_keys(create_a_phone())
-        driver.find_element_by_xpath('//*[@id="nb_nodeboard_send"]').click()
-
-        ele = driver.find_element_by_xpath('//*[@class="vcode-spin-button"]')
-        ActionChains(driver).drag_and_drop_by_offset(ele, xoffset=150, yoffset=0)
-        time.sleep(10)
-
-        # driver.refresh()
 
     # includes 额外要下载相关资源的外站
     # wait_func 页面等待方式
