@@ -20,6 +20,7 @@ class GameFmCrawl:
     wait_timeout = 10
     save_base = ''
     game_numeric = 1
+    game_info = {}
 
     def __init__(self, save_base, game_numeric=1):
         self.save_base = save_base
@@ -33,12 +34,15 @@ class GameFmCrawl:
             else:
                 print('Success:', _url)
 
+        return self.game_info
+
     def fetch_file(self, u):
         url_parse = urllib.parse.urlparse(u)
         save_path = os.path.join(self.save_base, url_parse.path.replace(f'/data/{self.game_numeric}/', ''))
 
         res = requests.get(u)
         if save_path.endswith('index.html'):
+            self.fill_game_info(res.text)
             self.find_url_in_html(u, res.text)
 
         return download_source(res.content, save_path)
@@ -56,3 +60,10 @@ class GameFmCrawl:
 
         if len(urls) > 0:
             self.fetch_source(urls)
+
+    # 提取游戏名称
+    def fill_game_info(self, txt):
+        fs = re.compile(r"<title>(?P<game_name>.*?)</title>", re.M)
+        info = fs.finditer(txt)
+        for item in info:
+            self.game_info['name'] = item.group('game_name')

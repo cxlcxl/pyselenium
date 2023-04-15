@@ -9,6 +9,7 @@ if __name__ == '__main__':
     crawler = PyCrawler(surl, chromedriver='./runtime/chromedriver.exe')
     urls = crawler.find_urls(wait_func=game_fm_wait_func)
 
-    game_key = md5(game_num)[:12]
-    game_fm = GameFmCrawl(save_base=f'gamesources/{game_key}/', game_numeric=game_num)
-    game_fm.fetch_source(urls)
+    game_id = md5(game_num)[:12]
+    game_fm = GameFmCrawl(save_base=f'gamesources/{game_id}/', game_numeric=game_num)
+    game_info = game_fm.fetch_source(urls)
+    print("游戏抓取完成：", game_info)
